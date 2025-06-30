@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Página de Inicio</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="weather">Cargando clima...</div>
+  <h1>Bienvenido</h1>
+  <div id="clock">--:--:--</div>
+
+  <div class="links">
+    <a href="https://www.google.com" target="_blank"><img class="google" src="images/google.svg"></a>
+    <a href="https://www.youtube.com" target="_blank"><img src="images/youtube.svg"></a>
+    <a href="https://mail.google.com" target="_blank"><img class="gmail" src="images/gmail.svg"></a>
+    <a href="https://www.x.com" target="_blank"><img class = "twitter" src = "images/twitter.svg"></a>
+    <a href="https://www.twitch.tv" target="_blank"><img class="twitch" src="images/twitch.svg"></a>
+  </div>
+
+  <h3>Notas o tareas:</h3>
+  <textarea id="notas" placeholder="Escribe tus tareas aquí..."></textarea>
+
+  <script>
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent = now.toLocaleTimeString();
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  const notas = document.getElementById('notas');
+  notas.value = localStorage.getItem('notas') || '';
+  notas.addEventListener('input', () => {
+    localStorage.setItem('notas', notas.value);
+  });
+
+  // Relación entre weathercode y emojis / íconos
+  const weatherIcons = {
+    0: "☀️", // Despejado
+    1: "🌤️", 2: "⛅", 3: "☁️", // Parcial a nublado
+    45: "🌫️", 48: "🌫️", // Niebla
+    51: "🌦️", 53: "🌦️", 55: "🌧️",
+    61: "🌧️", 63: "🌧️", 65: "🌧️",
+    71: "❄️", 73: "❄️", 75: "❄️",
+    80: "🌧️", 81: "🌧️", 82: "🌧️",
+    95: "⛈️", 96: "⛈️", 99: "⛈️"
+  };
+
+  function mostrarClima(lat, lon) {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto`;
+
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        const weatherDiv = document.getElementById('weather');
+
+        // Clima actual
+        const temp = data.current_weather.temperature;
+        const wind = data.current_weather.windspeed;
+        const icon = weatherIcons[data.current_weather.weathercode] || "❓";
+
+        weatherDiv.innerHTML = `
+          <div class="weather-current">${icon} ${temp}°C | 💨 ${wind} km/h</div>
+          <div class="forecast-container"></div>
+        `;
+
+        const forecastContainer = weatherDiv.querySelector('.forecast-container');
+        const fechas = data.daily.time;
+        const max = data.daily.temperature_2m_max;
+        const min = data.daily.temperature_2m_min;
+        const codes = data.daily.weathercode;
+
+        for (let i = 0; i < 3; i++) {
+          const dia = fechas[i];
+          const ic = weatherIcons[codes[i]] || "❓";
+
+          forecastContainer.innerHTML += `
+            <div class="forecast-card">
+              <div class="date">${dia}</div>
+              <div class="icon">${ic}</div>
+              <div class="temp">⬆️ ${max[i]}°C<br>⬇️ ${min[i]}°C</div>
+            </div>
+          `;
+        }
+      })
+      .catch(() => {
+        document.getElementById('weather').textContent = 'Error al obtener el clima.';
+      });
+  }
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const { latitude, longitude } = pos.coords;
+        mostrarClima(latitude, longitude);
+      },
+      () => {
+        document.getElementById('weather').textContent = 'Ubicación denegada.';
+      }
+    );
+  } else {
+    document.getElementById('weather').textContent = 'Geolocalización no disponible.';
+  }
+</script>
+</body>
+</html>
