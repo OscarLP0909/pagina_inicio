@@ -74,12 +74,17 @@
         const codes = data.daily.weathercode;
 
         for (let i = 0; i < 3; i++) {
-          const dia = fechas[i];
+          const fechaOriginal = fechas[i];
+          const fechaFormateada = new Date(fechaOriginal).toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          });
           const ic = weatherIcons[codes[i]] || "❓";
 
           forecastContainer.innerHTML += `
             <div class="forecast-card">
-              <div class="date">${dia}</div>
+              <div class="date">${fechaFormateada}</div>
               <div class="icon">${ic}</div>
               <div class="temp">⬆️ ${max[i]}°C<br>⬇️ ${min[i]}°C</div>
             </div>
